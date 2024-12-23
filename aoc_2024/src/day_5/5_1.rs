@@ -35,11 +35,7 @@ fn main() {
             update[idx..].iter().all(|number| {
                 let deps_opt = dep_map.get(el);
 
-                if deps_opt == None || !deps_opt.unwrap().contains(number) {
-                    return true;
-                }
-
-                false
+                deps_opt == None || !deps_opt.unwrap().contains(number)
             })
         });
 
