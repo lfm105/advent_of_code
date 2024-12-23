@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 regex = "1.11.1"
+strum = "0.26"
+strum_macros = "0.26"
 
 [[bin]]
 name = "1_1"
@@ -31,3 +33,7 @@ path = "src/day_3/3_1.rs"
 [[bin]]
 name = "3_2"
 path = "src/day_3/3_2.rs"
+
+[[bin]]
+name = "4_1"
+path = "src/day_4/4_1.rs"
