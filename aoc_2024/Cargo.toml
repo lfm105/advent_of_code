@@ -70,3 +70,7 @@ path = "src/day_7/7_2.rs"
 [[bin]]
 name = "8_1"
 path = "src/day_8/8_1.rs"
+
+[[bin]]
+name = "8_2"
+path = "src/day_8/8_2.rs"
