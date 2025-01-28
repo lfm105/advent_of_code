@@ -11,42 +11,25 @@ fn build_cache(
     }
 
     controller_fastest_paths
-        .iter()
+        .iter() // for each (A, B) pair
         .for_each(|((src, target), cfp)| {
+            // for each shortest path to go from A to B
             let length_of_fastest_path = cfp.iter().fold(u64::max_value(), |acc, cfp_path| {
                 let mut fpp_len = 0u64;
 
-                if cfp_path.is_empty() {
-                    return 1; // press 'A'
+                for i in 0..cfp_path.len() {
+                    match i {
+                        0 => fpp_len += cache.get(&(('A', cfp_path[i]), depth + 1)).unwrap(),
+                        _ => {
+                            fpp_len += cache
+                                .get(&((cfp_path[i - 1], cfp_path[i]), depth + 1))
+                                .unwrap()
+                        }
+                    }
                 }
 
-                fpp_len += cache.get(&(('A', cfp_path[0]), depth + 1)).unwrap_or(
-                    &(controller_fastest_paths
-                        .get(&('A', cfp_path[0]))
-                        .unwrap()
-                        .iter()
-                        .next()
-                        .unwrap()
-                        .len() as u64),
-                );
-                fpp_len += 1;
-
-                for i in 1..cfp_path.len() {
-                    fpp_len += cache
-                        .get(&((cfp_path[i - 1], cfp_path[i]), depth + 1))
-                        .unwrap_or(
-                            &(controller_fastest_paths
-                                .get(&(cfp_path[i - 1], cfp_path[i]))
-                                .unwrap()
-                                .iter()
-                                .next()
-                                .unwrap()
-                                .len() as u64),
-                        );
-                    fpp_len += 1;
-                }
-
-                if acc > fpp_len {
+                // if this path is shorter than the current shortest, update the shortest
+                if fpp_len < acc {
                     return fpp_len;
                 }
 
@@ -188,11 +171,11 @@ fn main() {
     #[rustfmt::skip]
     let controller_fastest_paths: BTreeMap<(char, char), HashSet<Vec<char>>> = BTreeMap::from([
         (('^', '^'), HashSet::from([vec!['A']])),
-        (('^', '>'), HashSet::from([vec!['v', '>'], vec!['>', 'v', 'A']])),
+        (('^', '>'), HashSet::from([vec!['v', '>', 'A'], vec!['>', 'v', 'A']])),
         (('^', 'v'), HashSet::from([vec!['v', 'A']])),
         (('^', '<'), HashSet::from([vec!['v', '<', 'A']])),
         (('^', 'A'), HashSet::from([vec!['>', 'A']])),
-        (('>', '^'), HashSet::from([vec!['<', '^'], vec!['^', '<', 'A']])),
+        (('>', '^'), HashSet::from([vec!['<', '^', 'A'], vec!['^', '<', 'A']])),
         (('>', '>'), HashSet::from([vec!['A']])),
         (('>', 'v'), HashSet::from([vec!['<', 'A']])),
         (('>', '<'), HashSet::from([vec!['<', '<', 'A']])),
@@ -201,7 +184,7 @@ fn main() {
         (('v', '>'), HashSet::from([vec!['>', 'A']])),
         (('v', 'v'), HashSet::from([vec!['A']])),
         (('v', '<'), HashSet::from([vec!['<', 'A']])),
-        (('v', 'A'), HashSet::from([vec!['>', '^'], vec!['^', '>', 'A']])),
+        (('v', 'A'), HashSet::from([vec!['>', '^', 'A'], vec!['^', '>', 'A']])),
         (('<', '^'), HashSet::from([vec!['>', '^', 'A']])),
         (('<', '>'), HashSet::from([vec!['>', '>', 'A']])),
         (('<', 'v'), HashSet::from([vec!['>', 'A']])),
@@ -209,7 +192,7 @@ fn main() {
         (('<', 'A'), HashSet::from([vec!['>', '>', '^', 'A']])),
         (('A', '^'), HashSet::from([vec!['<', 'A']])),
         (('A', '>'), HashSet::from([vec!['v', 'A']])),
-        (('A', 'v'), HashSet::from([vec!['<', 'v'], vec!['v', '<', 'A']])),
+        (('A', 'v'), HashSet::from([vec!['<', 'v', 'A'], vec!['v', '<', 'A']])),
         (('A', '<'), HashSet::from([vec!['v', '<', '<', 'A']])),
         (('A', 'A'), HashSet::from([vec!['A']])),
     ]);
@@ -224,7 +207,7 @@ fn main() {
         })
         .collect::<Vec<(u64, Vec<_>)>>();
 
-    let robots = 26u32;
+    let robots = 25u32;
 
     // the path that I have to do from the highest robot to move from A to B
     let mut cache: BTreeMap<((char, char), u32), u64> = controller_fastest_paths
@@ -232,12 +215,12 @@ fn main() {
         .map(|((src, target), fps)| {
             (
                 ((*src, *target), robots),
-                fps.iter().next().unwrap().len() as u64 + 1,
+                fps.iter().next().unwrap().len() as u64,
             )
         })
         .collect();
 
-    build_cache(&controller_fastest_paths, &mut cache, robots);
+    build_cache(&controller_fastest_paths, &mut cache, robots - 1);
 
     let total_complexity = codes
         .into_iter()
@@ -247,9 +230,9 @@ fn main() {
             for i in 0..chars.len() {
                 // for each character in code
                 let shortest_paths = match i {
-                    0 => keypad_fastest_paths.get(&('A', chars[0])).unwrap(), // if first character, we need to go from A to the current character
-                    _ => keypad_fastest_paths.get(&(chars[i - 1], chars[i])).unwrap(),
-                }; // else, we need to go from the previous character to the current character
+                    0 => keypad_fastest_paths.get(&('A', chars[i])).unwrap(), // if first character, we need to go from A to the current character
+                    _ => keypad_fastest_paths.get(&(chars[i - 1], chars[i])).unwrap(), // else, we need to go from the previous character to the current character
+                };
 
                 let shortest_path_len = shortest_paths.iter().fold(u64::max_value(), |acc, fp| {
                     // get all the shortest paths
@@ -260,7 +243,7 @@ fn main() {
                         match i {
                             0 => {
                                 shortest_path_len_2 +=
-                                    *cache.get(&(('A', fp[0]), 1)).unwrap() as u64
+                                    *cache.get(&(('A', fp[i]), 1)).unwrap() as u64
                             } // if first character, we need to go from A to the current character
                             _ => {
                                 shortest_path_len_2 +=
